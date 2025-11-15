@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Derivadas Parciales</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+    <script>
+        // Pass data from Python to JavaScript
+        window.examplesData = {{ examples_json | safe }};
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="active">Derivadas Parciales</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <h3>Ejemplos</h3>
+                <ul>
+                    {% for example in examples %}
+                    <li>
+                        <a href="#" class="sidebar-link {% if loop.first %}active{% endif %}" data-tab="tab-{{ example.id }}">
+                            {{ example.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <div class="hero">
+                <h1>Derivadas Parciales con Diferencias Finitas</h1>
+                <p>Cálculo numérico de ∂f/∂x y ∂f/∂y en malla uniformemente espaciada</p>
+            </div>
+
+            <div class="info-box">
+                <h3>Sobre el método</h3>
+                <p>Se usa <strong>diferencias finitas centrales de segundo orden</strong> para aproximar las derivadas parciales:</p>
+                <div class="formula">
+                    ∂f/∂x ≈ (f<sub>i,j+1</sub> - f<sub>i,j-1</sub>) / (2·h<sub>x</sub>)
+                </div>
+                <div class="formula">
+                    ∂f/∂y ≈ (f<sub>i+1,j</sub> - f<sub>i-1,j</sub>) / (2·h<sub>y</sub>)
+                </div>
+                <p>Los bordes se manejan duplicando el valor del punto vecino inmediato.</p>
+            </div>
+
+            <!-- Tabs System -->
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    {% for example in examples %}
+                    <button class="tab-button {% if loop.first %}active{% endif %}" data-tab="tab-{{ example.id }}">
+                        Ejemplo {{ example.id }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <!-- Tab Contents -->
+                {% for example in examples %}
+                <div class="tab-content {% if loop.first %}active{% endif %}" id="tab-{{ example.id }}">
+                    <div class="example-section">
+                        <div class="example-header">
+                            <h2>{{ example.name }}</h2>
+                            <p class="example-description">{{ example.description }}</p>
+                        </div>
+
+                        <div class="function-display">
+                            <h3>Función</h3>
+                            <div class="formula-large">
+                                f(x, y) = {{ example.function }}
+                            </div>
+                        </div>
+
+                        <div class="derivatives-grid">
+                            <div class="derivative-box">
+                                <h4>Derivada Parcial ∂f/∂x</h4>
+                                <div class="formula-box">
+                                    <p><strong>Analítica:</strong></p>
+                                    <code>{{ example.analytical_dx }}</code>
+                                </div>
+                                <div class="formula-box">
+                                    <p><strong>Numérica (Diferencias Finitas):</strong></p>
+                                    <p>Se usa la fórmula central en puntos interiores</p>
+                                    <p>Rango: [{{ "%.4f"|format(example.stats.df_dx_min) }}, {{ "%.4f"|format(example.stats.df_dx_max) }}]</p>
+                                </div>
+                            </div>
+
+                            <div class="derivative-box">
+                                <h4>Derivada Parcial ∂f/∂y</h4>
+                                <div class="formula-box">
+                                    <p><strong>Analítica:</strong></p>
+                                    <code>{{ example.analytical_dy }}</code>
+                                </div>
+                                <div class="formula-box">
+                                    <p><strong>Numérica (Diferencias Finitas):</strong></p>
+                                    <p>Se usa la fórmula central en puntos interiores</p>
+                                    <p>Rango: [{{ "%.4f"|format(example.stats.df_dy_min) }}, {{ "%.4f"|format(example.stats.df_dy_max) }}]</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="params-info">
+                            <h4>Parámetros de la Malla</h4>
+                            <ul>
+                                <li><strong>Dominio:</strong> x ∈ [{{ example.domain.x_min }}, {{ example.domain.x_max }}], y ∈ [{{ example.domain.y_min }}, {{ example.domain.y_max }}]</li>
+                                <li><strong>Puntos:</strong> {{ example.mesh.nx }} × {{ example.mesh.ny }}</li>
+                                <li><strong>Espaciamiento:</strong> h<sub>x</sub> = {{ "%.6f"|format(example.mesh.hx) }}, h<sub>y</sub> = {{ "%.6f"|format(example.mesh.hy) }}</li>
+                            </ul>
+                        </div>
+
+                        <div class="visualizations">
+                            <h3>Visualizaciones Interactivas</h3>
+
+                            <div class="plot-item">
+                                <h4>Gráficas de Contorno</h4>
+                                <div id="contour-plot-{{ example.id }}" class="plotly-chart"></div>
+                            </div>
+
+                            <div class="plot-item">
+                                <h4>Superficies 3D</h4>
+                                <div id="surface-plot-{{ example.id }}" class="plotly-chart"></div>
+                            </div>
+
+                            <div class="plot-item">
+                                <h4>Campo Vectorial del Gradiente</h4>
+                                <div id="vector-plot-{{ example.id }}" class="plotly-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Calculadora de Derivadas Parciales | Métodos Numéricos</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
